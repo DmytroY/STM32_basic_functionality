@@ -169,6 +169,7 @@ int main(void)
 	int i;
 	float f;
 
+	uart_tx_complete = 0;  // Mark as transmitting block
 	printf("Enter your name: ");
 	scanf("%79s", str);
 	printf("\n");
@@ -195,6 +196,7 @@ int main(void)
 	printf("\n");
 
 	printf("You have entered %f \r\n", f);
+	uart_tx_complete = 1;  // Unblock, transmitting is finished
 
   /* USER CODE END 2 */
 
