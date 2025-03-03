@@ -42,10 +42,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart2;
-volatile uint8_t uart_tx_complete = 1;  // 1 = Ready, 0 = Transmitting
-volatile uint8_t buffer[50] = {0};
 
 /* USER CODE BEGIN PV */
+volatile uint8_t uart_tx_complete = 1;  // transmitting completion flag. 1 = Ready, 0 = Transmitting is in process
+volatile uint8_t buffer[50] = {0}; // message for asinc transmitting by HAL_UART_Transmit_IT. Should be global to avoid memory collision during parallel asynchronous work of HAL_UART_Transmit_IT
 
 /* USER CODE END PV */
 
@@ -56,6 +56,8 @@ static void MX_USART2_UART_Init(void);
 
 /* USER CODE BEGIN PFP */
 
+/* redefine fputc() and fgetc(), so we can use printf() and scanf() with UART serial port
+ */
 #ifdef __GNUC__
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 #define GETCHAR_PROTOTYPE int __io_getchar(void)
@@ -92,6 +94,9 @@ GETCHAR_PROTOTYPE
 // define what we do in case of GPIO interrupt
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	/* We get here after GRIO interruption caused by button push
+	   We will write to serial UART with asynchronous HAL_UART_Transmit_IT.
+	   Note, variable buffer should be global for this. */
 	static uint8_t counter = 0;
 
 	++counter;
@@ -106,14 +111,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(huart);
+/*
+This is overriding of weak callback function
+Here we will check if transmission finished
+ */
 
   if (huart->Instance == USART2) // Check if it is USART2 Transmission complete, do something
   {
 	  uart_tx_complete = 1;  // Mark transmission as complete
 	  uint8_t msg[] = "Asinc Transmission complete\n\r";
-	  HAL_UART_Transmit(&huart2, msg, strlen(msg), 20);
+	  HAL_UART_Transmit(&huart2, msg, strlen(msg), 20); // Sent message to UART in blocking manner with timeout 20 ms
   }
 }
 
@@ -137,7 +144,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-	  // Disable internal buffering for the input stream, is must for scanf() work correctly
+	  // Disable internal buffering for the input stream, is must for redefined scanf() work correctly
 	  setvbuf(stdin, NULL, _IONBF, 0);
   /* USER CODE END Init */
 
@@ -155,8 +162,39 @@ int main(void)
 
   uint8_t msg[50] = {0};
   sprintf(msg, "Serial started at %d baud rate\n\r", huart2.Init.BaudRate);
-  HAL_UART_Transmit(&huart2, msg, strlen(msg) , 20);
+  HAL_UART_Transmit(&huart2, msg, strlen(msg) , 20); // Sent message to UART in blocking manner with timeout 20 ms
 
+	// using redefined printf() and scanf()
+	char str[80];
+	int i;
+	float f;
+
+	printf("Enter your name: ");
+	scanf("%79s", str);
+	printf("\n");
+
+
+	printf("Enter your age: ");
+	scanf("%d", &i);
+	printf("\n");
+
+	printf("Hello, %s, %d years old.\r\n", str, i);
+
+	printf("Enter a hexadecimal number: ");
+	scanf("%x", &i);
+	printf("\n");
+
+	printf("You have entered %#x (%d).\r\n", i, i);
+
+	/* to use floating point input/output
+	 the option should be anabled in project properties. See details here:
+	 https://forum.digikey.com/t/easily-use-scanf-on-stm32/21103
+	 */
+	printf("Enter a floating point number: ");
+	scanf("%f", &f);
+	printf("\n");
+
+	printf("You have entered %f \r\n", f);
 
   /* USER CODE END 2 */
 
@@ -168,31 +206,11 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  uint8_t msg[50] = {0};
 
-	  uint8_t ch = 0;
+	// blink LCD
+	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	HAL_Delay(500);
 
-	/* Clear the Overrun flag just before receiving the first character */
-	//__HAL_UART_CLEAR_OREFLAG(&huart?);
-
-	/* Wait for reception of a character on the USART RX line and echo this
-	 * character on console */
-//	HAL_UART_Receive(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-//	HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-//	HAL_UART_Transmit(&huart2, "\n\r", 2, HAL_MAX_DELAY);ACX
-
-	char str[80];
-
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);
-	printf("Enter your name: ");
-	scanf("%79s", str);
-	printf("\n", str);
-
-	printf("Hello, %s!\r\n", str);
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
-	HAL_Delay(1000);
-//	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-//	  HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
