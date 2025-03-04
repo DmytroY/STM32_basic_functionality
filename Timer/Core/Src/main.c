@@ -102,7 +102,7 @@ int main(void)
 	  HAL_UART_Transmit(&huart2, &uart_buffer, uart_buffer_length, 100);
 
 	  // Start timer
-	  HAL_TIM_Base_Start(&htim16);
+	  HAL_TIM_Base_Start_IT(&htim16);
 
   /* USER CODE END 2 */
 
@@ -113,23 +113,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	  // read timer
-	  timer_val = htim16.Instance->CNT;
-//	  timer_val = __HAL_TIM_GET_COUNTER(&htim16); // the same via macros
-
-	  // wait 50 ms
-	  HAL_Delay(50);
-
-	  // timer delta
-	  timer_val = htim16.Instance->CNT - timer_val;
-//	  timer_val = __HAL_TIM_GET_COUNTER(&htim16) - timer_val; // the same via macros
-
-	  uart_buffer_length = sprintf(uart_buffer, "passed %d mks.\r\n", timer_val);
-	  HAL_UART_Transmit(&huart2, &uart_buffer, uart_buffer_length, 100);
-
-	  HAL_Delay(3000);
-
   }
   /* USER CODE END 3 */
 }
@@ -188,9 +171,9 @@ static void MX_TIM16_Init(void)
 
   /* USER CODE END TIM16_Init 1 */
   htim16.Instance = TIM16;
-  htim16.Init.Prescaler = 48-1;
+  htim16.Init.Prescaler = 48000-1;
   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim16.Init.Period = 65535;
+  htim16.Init.Period = 1000;
   htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim16.Init.RepetitionCounter = 0;
   htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -278,6 +261,15 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+// Calback function called by timer interruptions
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	// Check which version of timer triggered this callback and do something
+	if(htim == &htim16) {
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	}
+}
 
 /* USER CODE END 4 */
 
