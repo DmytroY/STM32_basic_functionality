@@ -4,4 +4,4 @@
 ../Core/Src/main.c:195:13:MX_USART2_UART_Init	2
 ../Core/Src/main.c:230:13:MX_GPIO_Init	1
 ../Core/Src/main.c:266:6:HAL_TIM_PeriodElapsedCallback	2
-../Core/Src/main.c:281:6:Error_Handler	1
+../Core/Src/main.c:280:6:Error_Handler	1

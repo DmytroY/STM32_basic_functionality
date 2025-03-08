@@ -723,7 +723,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  80004ba:	0018      	movs	r0, r3
  80004bc:	f000 fbff 	bl	8000cbe <HAL_GPIO_TogglePin>
 	}
-
 }
  80004c0:	46c0      	nop			@ (mov r8, r8)
  80004c2:	46bd      	mov	sp, r7
